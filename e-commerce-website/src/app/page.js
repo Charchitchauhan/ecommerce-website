@@ -453,8 +453,17 @@ export default function Home() {
               </Box>
 
               {/* Price and Add to Cart Section */}
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pt: 2, borderTop: "1px solid", borderColor: "rgba(0, 0, 0, 0.06)" }}>
-                <Box>
+              <Box sx={{ 
+                display: "flex", 
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: { xs: "stretch", sm: "center" }, 
+                justifyContent: "space-between", 
+                pt: 2, 
+                borderTop: "1px solid", 
+                borderColor: "rgba(0, 0, 0, 0.06)",
+                gap: { xs: 2.5, sm: 0 }
+              }}>
+                <Box sx={{ textAlign: { xs: "center", sm: "left" } }}>
                   <Typography variant="caption" color="text.secondary" display="block" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
                     Price
                   </Typography>
@@ -463,8 +472,8 @@ export default function Home() {
                   </Typography>
                 </Box>
                 
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  <Button variant="outlined" color="inherit" onClick={handleCloseDetails} sx={{ fontWeight: 600 }}>
+                <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
+                  <Button variant="outlined" color="inherit" onClick={handleCloseDetails} sx={{ fontWeight: 600, flexGrow: { xs: 1, sm: 0 } }}>
                     Close
                   </Button>
                   <Button
@@ -472,7 +481,7 @@ export default function Home() {
                     color="primary"
                     startIcon={<ShoppingCartIcon />}
                     onClick={handleDetailsAddToCart}
-                    sx={{ px: 4, py: 1.2, borderRadius: 2, fontWeight: 700 }}
+                    sx={{ px: 4, py: 1.2, borderRadius: 2, fontWeight: 700, flexGrow: { xs: 1, sm: 0 } }}
                   >
                     Add to Cart
                   </Button>

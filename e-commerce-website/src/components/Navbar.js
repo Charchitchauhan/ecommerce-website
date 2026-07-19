@@ -264,7 +264,7 @@ export default function Navbar() {
                 </IconButton>
               </Tooltip>
             ) : (
-              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              <Box sx={{ display: { xs: "none", sm: "flex" }, gap: 1, alignItems: "center" }}>
                 <Button 
                   variant="outlined" 
                   color="primary" 

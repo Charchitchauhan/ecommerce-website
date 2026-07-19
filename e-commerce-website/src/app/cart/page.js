@@ -827,7 +827,7 @@ export default function Cart() {
                       ].map((app) => {
                         const isSelected = selectedUpiApp === app.id;
                         return (
-                          <Grid item xs={2.4} key={app.id}>
+                          <Grid item xs={4} sm={2.4} key={app.id}>
                             <ButtonBase
                               onClick={() => handleSelectUpiApp(app.id)}
                               sx={{
