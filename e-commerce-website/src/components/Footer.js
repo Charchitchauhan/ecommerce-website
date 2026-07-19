@@ -121,10 +121,10 @@ export default function Footer() {
                 Jewelry
               </MuiLink>
               <MuiLink component={Link} href="/?category=men's clothing" sx={{ color: "#94a3b8", textDecoration: "none", fontSize: "0.9rem", "&:hover": { color: "#ffffff", pl: 0.5 }, transition: "all 0.2s ease" }}>
-                Men's Clothing
+                Men&apos;s Clothing
               </MuiLink>
               <MuiLink component={Link} href="/?category=women's clothing" sx={{ color: "#94a3b8", textDecoration: "none", fontSize: "0.9rem", "&:hover": { color: "#ffffff", pl: 0.5 }, transition: "all 0.2s ease" }}>
-                Women's Clothing
+                Women&apos;s Clothing
               </MuiLink>
             </Box>
           </Grid>

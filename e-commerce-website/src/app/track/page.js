@@ -267,7 +267,7 @@ export default function TrackOrder() {
               Order Not Found
             </Typography>
             <Typography color="text.secondary" variant="body2" sx={{ maxWidth: 400, mx: "auto", mb: 2 }}>
-              We couldn't find any active record matching the tracking code <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>{searchId}</Box>. Please check your order invoice and try again.
+              We couldn&apos;t find any active record matching the tracking code <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>{searchId}</Box>. Please check your order invoice and try again.
             </Typography>
           </Paper>
         )

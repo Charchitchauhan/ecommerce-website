@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useApp } from "../context/AppContext";
 import { 
   AppBar, 
@@ -45,6 +45,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { cart, user, isLoggedIn, updateUserProfile, login, logout, cartDrawerOpen, setCartDrawerOpen, updateCartQuantity, removeFromCart } = useApp();
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -75,6 +76,7 @@ export default function Navbar() {
 
   React.useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProfileForm({
         name: user.name || "",
         email: user.email || "",
@@ -97,6 +99,12 @@ export default function Navbar() {
     e.preventDefault();
     updateUserProfile(profileForm);
     setIsProfileModalOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+    handleProfileMenuClose();
   };
 
   const handleSearchClick = () => {
@@ -256,21 +264,41 @@ export default function Navbar() {
                 </IconButton>
               </Tooltip>
             ) : (
-              <Button 
-                variant="outlined" 
-                color="primary" 
-                onClick={login}
-                size="small"
-                sx={{ 
-                  borderRadius: 99, 
-                  fontWeight: 700, 
-                  textTransform: "none", 
-                  px: 2.5,
-                  py: 0.8
-                }}
-              >
-                Login
-              </Button>
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                <Button 
+                  variant="outlined" 
+                  color="primary" 
+                  component={Link}
+                  href="/login"
+                  size="small"
+                  sx={{ 
+                    borderRadius: 99, 
+                    fontWeight: 700, 
+                    textTransform: "none", 
+                    px: 2,
+                    py: 0.6
+                  }}
+                >
+                  Login
+                </Button>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  component={Link}
+                  href="/signup"
+                  size="small"
+                  sx={{ 
+                    borderRadius: 99, 
+                    fontWeight: 700, 
+                    textTransform: "none", 
+                    px: 2.5,
+                    py: 0.8,
+                    boxShadow: "0 4px 10px rgba(99, 102, 241, 0.2)"
+                  }}
+                >
+                  Sign Up
+                </Button>
+              </Box>
             )}
 
             {/* Cart Icon */}
@@ -361,7 +389,7 @@ export default function Navbar() {
           <ListItemText primary="Track Order" primaryTypographyProps={{ fontSize: "0.95rem", fontWeight: 600 }} />
         </MenuItem>
         <Divider />
-        <MenuItem onClick={logout} sx={{ py: 1.2, px: 2, color: "error.main" }}>
+        <MenuItem onClick={handleLogout} sx={{ py: 1.2, px: 2, color: "error.main" }}>
           <ListItemIcon sx={{ minWidth: "36px !important", color: "error.main" }}>
             <LogoutIcon fontSize="small" />
           </ListItemIcon>
@@ -597,7 +625,7 @@ export default function Navbar() {
           </IconButton>
         </Box>
         <List>
-          <ListItem button component={Link} href="/" onClick={() => setMobileDrawerOpen(false)}>
+           <ListItem button component={Link} href="/" onClick={() => setMobileDrawerOpen(false)}>
             <ListItemText primary="Home" primaryTypographyProps={{ fontWeight: 600 }} />
           </ListItem>
           <ListItem button component={Link} href="/about" onClick={() => setMobileDrawerOpen(false)}>
@@ -609,6 +637,29 @@ export default function Navbar() {
           <ListItem button component={Link} href="/track" onClick={() => setMobileDrawerOpen(false)}>
             <ListItemText primary="Track Order" primaryTypographyProps={{ fontWeight: 600 }} />
           </ListItem>
+          <Divider sx={{ my: 1 }} />
+          {isLoggedIn ? (
+            <>
+              <ListItem button onClick={() => { setMobileDrawerOpen(false); handleProfileModalOpen(); }}>
+                <ListItemText primary="My Profile" primaryTypographyProps={{ fontWeight: 600 }} />
+              </ListItem>
+              <ListItem button component={Link} href="/cart#orders-history" onClick={() => setMobileDrawerOpen(false)}>
+                <ListItemText primary="Orders History" primaryTypographyProps={{ fontWeight: 600 }} />
+              </ListItem>
+              <ListItem button onClick={() => { setMobileDrawerOpen(false); handleLogout(); }} sx={{ color: "error.main" }}>
+                <ListItemText primary="Logout" primaryTypographyProps={{ fontWeight: 600 }} />
+              </ListItem>
+            </>
+          ) : (
+            <>
+              <ListItem button component={Link} href="/login" onClick={() => setMobileDrawerOpen(false)}>
+                <ListItemText primary="Login" primaryTypographyProps={{ fontWeight: 600, color: "primary.main" }} />
+              </ListItem>
+              <ListItem button component={Link} href="/signup" onClick={() => setMobileDrawerOpen(false)}>
+                <ListItemText primary="Sign Up" primaryTypographyProps={{ fontWeight: 600 }} />
+              </ListItem>
+            </>
+          )}
         </List>
       </Drawer>
     </AppBar>

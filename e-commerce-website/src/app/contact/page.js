@@ -55,7 +55,7 @@ export default function Contact() {
             Contact Us
           </Typography>
           <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 700, mx: "auto", lineHeight: 1.6 }}>
-            Have a question or feedback? We'd love to hear from you. Get in touch with our team using the form below.
+            Have a question or feedback? We&apos;d love to hear from you. Get in touch with our team using the form below.
           </Typography>
         </Container>
       </Box>

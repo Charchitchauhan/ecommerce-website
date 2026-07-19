@@ -24,7 +24,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  CircularProgress
+  CircularProgress,
+  ButtonBase
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -38,7 +39,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import WarningIcon from "@mui/icons-material/Warning";
 
 export default function Cart() {
-  const { cart, updateCartQuantity, removeFromCart, placeOrder, orders } = useApp();
+  const { cart, updateCartQuantity, removeFromCart, placeOrder, orders, user, isLoggedIn } = useApp();
   
   // Checkout form fields
   const [shippingForm, setShippingForm] = useState({
@@ -48,6 +49,18 @@ export default function Cart() {
     city: "",
     zipCode: ""
   });
+
+  React.useEffect(() => {
+    if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShippingForm(prev => ({
+        ...prev,
+        name: prev.name || user.name || "",
+        email: prev.email || user.email || "",
+        address: prev.address || user.address || ""
+      }));
+    }
+  }, [user]);
   
   const [successOrder, setSuccessOrder] = useState(null); // stores order details on success
   const [loadingPayment, setLoadingPayment] = useState(false);
@@ -61,7 +74,11 @@ export default function Cart() {
     cvv: "",
     name: ""
   });
-  const [upiId, setUpiId] = useState("");
+  const [selectedUpiApp, setSelectedUpiApp] = useState("gpay"); // "gpay", "phonepe", "paytm", "bhim", "custom"
+  const [upiUsername, setUpiUsername] = useState("");
+  const [upiSuffix, setUpiSuffix] = useState("@okhdfcbank");
+  const [showQr, setShowQr] = useState(false);
+  const [simulateFailure, setSimulateFailure] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
 
@@ -106,6 +123,23 @@ export default function Cart() {
     setPaymentDialogOpen(true);
     setPaymentError(null);
     setPaymentLoading(false);
+    setUpiUsername("");
+    setShowQr(false);
+  };
+
+  const handleSelectUpiApp = (app) => {
+    setSelectedUpiApp(app);
+    if (app === "gpay") {
+      setUpiSuffix("@okhdfcbank");
+    } else if (app === "phonepe") {
+      setUpiSuffix("@ybl");
+    } else if (app === "paytm") {
+      setUpiSuffix("@paytm");
+    } else if (app === "bhim") {
+      setUpiSuffix("@upi");
+    } else {
+      setUpiSuffix("");
+    }
   };
 
   const simulatePayment = (methodName) => {
@@ -114,11 +148,25 @@ export default function Cart() {
 
     setTimeout(() => {
       setPaymentLoading(false);
-      setPaymentError({
-        txnId: "TXN-" + Math.floor(10000000 + Math.random() * 90000000),
-        reason: `Your payment of ₹${(total * 85).toFixed(2)} via ${methodName} was declined by the bank/gateway. Payment was not successfully completed.`,
-        payee: "Charchit chauhan"
-      });
+      const txnId = "TXN-" + Math.floor(10000000 + Math.random() * 90000000);
+      if (simulateFailure) {
+        setPaymentError({
+          txnId,
+          reason: `Your payment of ₹${(total * 85).toFixed(2)} via ${methodName} was declined by the bank/gateway. Payment was not successfully completed.`,
+          payee: "Charchit chauhan"
+        });
+      } else {
+        const finalUpiInfo = methodName === "UPI"
+          ? (selectedUpiApp === "custom" ? upiUsername : `${upiUsername}${upiSuffix}`)
+          : methodName;
+        const newOrder = placeOrder({
+          ...shippingForm,
+          paymentId: txnId,
+          paymentMethod: `${methodName} (${finalUpiInfo})`
+        });
+        setSuccessOrder(newOrder);
+        setPaymentDialogOpen(false);
+      }
     }, 2000);
   };
 
@@ -697,75 +745,189 @@ export default function Cart() {
               )}
 
               {activeTab === 1 && (
-                /* UPI Payment (payee Charchit chauhan & SVG QR Code) */
-                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                      Payee: Charchit chauhan
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      UPI ID: <Box component="span" sx={{ fontWeight: 700 }}>charchitchauhan@upi</Box>
-                    </Typography>
+                /* UPI Payment (payee Charchit chauhan & Select App UI) */
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                        Payee: Charchit chauhan
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Merchant UPI: <Box component="span" sx={{ fontWeight: 700 }}>charchitchauhan@upi</Box>
+                      </Typography>
+                    </Box>
+                    <Button 
+                      variant="outlined" 
+                      size="small" 
+                      onClick={() => setShowQr(!showQr)}
+                      sx={{ textTransform: "none", fontWeight: 700 }}
+                    >
+                      {showQr ? "Hide QR Code" : "Show QR Code"}
+                    </Button>
                   </Box>
 
-                  {/* Vector SVG QR Code */}
-                  <svg width="180" height="180" viewBox="0 0 29 29" style={{ background: "#ffffff", padding: "8px", border: "1px solid #e2e8f0", borderRadius: "8px" }}>
-                    <path d="M0,0 h7 v2 h-5 v5 h-2 z" fill="#0f172a"/>
-                    <path d="M22,0 h7 v7 h-2 v-5 h-5 z" fill="#0f172a"/>
-                    <path d="M0,22 v7 h7 v-2 h-5 v-5 z" fill="#0f172a"/>
-                    <path d="M22,29 h7 v-7 h-2 v5 h-5 z" fill="#0f172a"/>
-                    <rect x="2" y="2" width="5" height="5" fill="none" stroke="#0f172a" strokeWidth="1.5"/>
-                    <rect x="3.5" y="3.5" width="2" height="2" fill="#0f172a"/>
-                    <rect x="22" y="2" width="5" height="5" fill="none" stroke="#0f172a" strokeWidth="1.5"/>
-                    <rect x="23.5" y="3.5" width="2" height="2" fill="#0f172a"/>
-                    <rect x="2" y="22" width="5" height="5" fill="none" stroke="#0f172a" strokeWidth="1.5"/>
-                    <rect x="3.5" y="23.5" width="2" height="2" fill="#0f172a"/>
-                    <rect x="11" y="11" width="7" height="7" rx="1.5" fill="#6366f1"/>
-                    <text x="14.5" y="15.5" fontSize="2.8" fill="#ffffff" fontWeight="bold" textAnchor="middle">UPI</text>
-                    <rect x="9" y="2" width="1" height="2" fill="#334155"/>
-                    <rect x="11" y="3" width="2" height="1" fill="#334155"/>
-                    <rect x="14" y="2" width="3" height="1" fill="#334155"/>
-                    <rect x="18" y="3" width="2" height="2" fill="#334155"/>
-                    <rect x="9" y="6" width="3" height="1" fill="#334155"/>
-                    <rect x="13" y="5" width="2" height="2" fill="#334155"/>
-                    <rect x="16" y="7" width="1" height="2" fill="#334155"/>
-                    <rect x="2" y="9" width="2" height="1" fill="#334155"/>
-                    <rect x="5" y="10" width="3" height="2" fill="#334155"/>
-                    <rect x="9" y="9" width="1" height="3" fill="#334155"/>
-                    <rect x="20" y="9" width="4" height="1" fill="#334155"/>
-                    <rect x="25" y="10" width="2" height="2" fill="#334155"/>
-                    <rect x="2" y="14" width="3" height="1" fill="#334155"/>
-                    <rect x="6" y="15" width="1" height="2" fill="#334155"/>
-                    <rect x="9" y="17" width="2" height="1" fill="#334155"/>
-                    <rect x="20" y="13" width="1" height="3" fill="#334155"/>
-                    <rect x="23" y="15" width="3" height="1" fill="#334155"/>
-                    <rect x="9" y="20" width="3" height="1" fill="#334155"/>
-                    <rect x="13" y="21" width="1" height="2" fill="#334155"/>
-                    <rect x="16" y="20" width="2" height="1" fill="#334155"/>
-                    <rect x="15" y="23" width="1" height="4" fill="#334155"/>
-                    <rect x="18" y="25" width="3" height="1" fill="#334155"/>
-                    <rect x="9" y="25" width="2" height="2" fill="#334155"/>
-                  </svg>
-
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: "uppercase" }}>
-                    Scan QR with GPay, PhonePe, Paytm or BHIM
-                  </Typography>
-
-                  <Divider sx={{ width: "100%", my: 1 }} />
+                  {showQr && (
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5, p: 2, border: "1px solid", borderColor: "divider", borderRadius: 3, bgcolor: "rgba(0,0,0,0.01)" }}>
+                      {/* Vector SVG QR Code */}
+                      <svg width="150" height="150" viewBox="0 0 29 29" style={{ background: "#ffffff", padding: "6px", border: "1px solid #e2e8f0", borderRadius: "8px" }}>
+                        <path d="M0,0 h7 v2 h-5 v5 h-2 z" fill="#0f172a"/>
+                        <path d="M22,0 h7 v7 h-2 v-5 h-5 z" fill="#0f172a"/>
+                        <path d="M0,22 v7 h7 v-2 h-5 v-5 z" fill="#0f172a"/>
+                        <path d="M22,29 h7 v-7 h-2 v5 h-5 z" fill="#0f172a"/>
+                        <rect x="2" y="2" width="5" height="5" fill="none" stroke="#0f172a" strokeWidth="1.5"/>
+                        <rect x="3.5" y="3.5" width="2" height="2" fill="#0f172a"/>
+                        <rect x="22" y="2" width="5" height="5" fill="none" stroke="#0f172a" strokeWidth="1.5"/>
+                        <rect x="23.5" y="3.5" width="2" height="2" fill="#0f172a"/>
+                        <rect x="2" y="22" width="5" height="5" fill="none" stroke="#0f172a" strokeWidth="1.5"/>
+                        <rect x="3.5" y="23.5" width="2" height="2" fill="#0f172a"/>
+                        <rect x="11" y="11" width="7" height="7" rx="1.5" fill="#6366f1"/>
+                        <text x="14.5" y="15.5" fontSize="2.8" fill="#ffffff" fontWeight="bold" textAnchor="middle">UPI</text>
+                        <rect x="9" y="2" width="1" height="2" fill="#334155"/>
+                        <rect x="11" y="3" width="2" height="1" fill="#334155"/>
+                        <rect x="14" y="2" width="3" height="1" fill="#334155"/>
+                        <rect x="18" y="3" width="2" height="2" fill="#334155"/>
+                        <rect x="9" y="6" width="3" height="1" fill="#334155"/>
+                        <rect x="13" y="5" width="2" height="2" fill="#334155"/>
+                        <rect x="16" y="7" width="1" height="2" fill="#334155"/>
+                        <rect x="2" y="9" width="2" height="1" fill="#334155"/>
+                        <rect x="5" y="10" width="3" height="2" fill="#334155"/>
+                        <rect x="9" y="9" width="1" height="3" fill="#334155"/>
+                        <rect x="20" y="9" width="4" height="1" fill="#334155"/>
+                        <rect x="25" y="10" width="2" height="2" fill="#334155"/>
+                        <rect x="2" y="14" width="3" height="1" fill="#334155"/>
+                        <rect x="6" y="15" width="1" height="2" fill="#334155"/>
+                        <rect x="9" y="17" width="2" height="1" fill="#334155"/>
+                        <rect x="20" y="13" width="1" height="3" fill="#334155"/>
+                        <rect x="23" y="15" width="3" height="1" fill="#334155"/>
+                        <rect x="9" y="20" width="3" height="1" fill="#334155"/>
+                        <rect x="13" y="21" width="1" height="2" fill="#334155"/>
+                        <rect x="16" y="20" width="2" height="1" fill="#334155"/>
+                        <rect x="15" y="23" width="1" height="4" fill="#334155"/>
+                        <rect x="18" y="25" width="3" height="1" fill="#334155"/>
+                        <rect x="9" y="25" width="2" height="2" fill="#334155"/>
+                      </svg>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        Scan QR with GPay, PhonePe, Paytm or BHIM
+                      </Typography>
+                    </Box>
+                  )}
 
                   <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
-                    <TextField 
-                      fullWidth 
-                      size="small" 
-                      label="Or enter your UPI ID" 
-                      placeholder="name@upi" 
-                      value={upiId}
-                      onChange={(e) => setUpiId(e.target.value)}
-                    />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
+                      Select Your UPI App:
+                    </Typography>
+                    
+                    <Grid container spacing={1.5} sx={{ mb: 1 }}>
+                      {[
+                        { id: "gpay", name: "Google Pay", color: "#4285F4", bgColor: "rgba(66, 133, 244, 0.08)" },
+                        { id: "phonepe", name: "PhonePe", color: "#5f259f", bgColor: "rgba(95, 37, 159, 0.08)" },
+                        { id: "paytm", name: "Paytm", color: "#00baf2", bgColor: "rgba(0, 186, 242, 0.08)" },
+                        { id: "bhim", name: "BHIM", color: "#e57c23", bgColor: "rgba(229, 124, 35, 0.08)" },
+                        { id: "custom", name: "Custom ID", color: "#475569", bgColor: "rgba(71, 85, 105, 0.08)" }
+                      ].map((app) => {
+                        const isSelected = selectedUpiApp === app.id;
+                        return (
+                          <Grid item xs={2.4} key={app.id}>
+                            <ButtonBase
+                              onClick={() => handleSelectUpiApp(app.id)}
+                              sx={{
+                                width: "100%",
+                                py: 1.5,
+                                px: 1,
+                                borderRadius: 3,
+                                border: "2px solid",
+                                borderColor: isSelected ? app.color : "divider",
+                                bgcolor: isSelected ? app.bgColor : "transparent",
+                                color: isSelected ? app.color : "text.secondary",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 1,
+                                alignItems: "center",
+                                transition: "all 0.2s ease",
+                                "&:hover": {
+                                  borderColor: app.color,
+                                  bgcolor: app.bgColor,
+                                  transform: "translateY(-2px)"
+                                }
+                              }}
+                            >
+                              <Avatar
+                                sx={{
+                                  width: 32,
+                                  height: 32,
+                                  bgcolor: app.color,
+                                  color: "#fff",
+                                  fontSize: "0.85rem",
+                                  fontWeight: 800,
+                                  boxShadow: isSelected ? `0 4px 8px ${app.color}40` : "none"
+                                }}
+                              >
+                                {app.id === "gpay" && "G"}
+                                {app.id === "phonepe" && "Pe"}
+                                {app.id === "paytm" && "Py"}
+                                {app.id === "bhim" && "B"}
+                                {app.id === "custom" && "@"}
+                              </Avatar>
+                              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.65rem", textAlign: "center" }}>
+                                {app.name}
+                              </Typography>
+                            </ButtonBase>
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+
+                    <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-end", width: "100%" }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label={selectedUpiApp === "custom" ? "Enter UPI ID" : "UPI Handle Username"}
+                        placeholder={selectedUpiApp === "custom" ? "username@bank" : "username / phone"}
+                        value={upiUsername}
+                        onChange={(e) => setUpiUsername(e.target.value)}
+                        sx={{ flexGrow: 1 }}
+                      />
+                      {selectedUpiApp !== "custom" && (
+                        <TextField
+                          select
+                          size="small"
+                          value={upiSuffix}
+                          onChange={(e) => setUpiSuffix(e.target.value)}
+                          SelectProps={{ native: true }}
+                          sx={{ width: 140 }}
+                        >
+                          {selectedUpiApp === "gpay" && (
+                            <>
+                              <option value="@okhdfcbank">@okhdfcbank</option>
+                              <option value="@okaxis">@okaxis</option>
+                              <option value="@okicici">@okicici</option>
+                              <option value="@oksbi">@oksbi</option>
+                            </>
+                          )}
+                          {selectedUpiApp === "phonepe" && (
+                            <>
+                              <option value="@ybl">@ybl</option>
+                              <option value="@ibh">@ibh</option>
+                              <option value="@axl">@axl</option>
+                            </>
+                          )}
+                          {selectedUpiApp === "paytm" && <option value="@paytm">@paytm</option>}
+                          {selectedUpiApp === "bhim" && <option value="@upi">@upi</option>}
+                        </TextField>
+                      )}
+                    </Box>
+
+                    {upiUsername && (
+                      <Typography variant="caption" color="primary.main" sx={{ fontWeight: 700, mt: -1, pl: 1 }}>
+                        Final UPI ID: {selectedUpiApp === "custom" ? upiUsername : `${upiUsername}${upiSuffix}`}
+                      </Typography>
+                    )}
+
                     <Button 
                       variant="contained" 
                       color="secondary" 
                       fullWidth 
+                      disabled={!upiUsername.trim()}
                       onClick={() => simulatePayment("UPI")}
                       sx={{ py: 1.5, fontWeight: 700 }}
                     >
@@ -792,6 +954,24 @@ export default function Cart() {
                   </Button>
                 </Box>
               )}
+
+              {/* Global decline toggle */}
+              <Box sx={{ mt: 3, pt: 2, borderTop: "1px dashed", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    Simulate Payment Failure
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Turn this on to test a declined gateway transaction screen
+                  </Typography>
+                </Box>
+                <input 
+                  type="checkbox" 
+                  checked={simulateFailure} 
+                  onChange={(e) => setSimulateFailure(e.target.checked)} 
+                  style={{ width: 18, height: 18, cursor: "pointer" }} 
+                />
+              </Box>
             </DialogContent>
           </Box>
         )}

@@ -104,13 +104,9 @@ export function AppProvider({ children }) {
   };
 
   // User auth and profile state
-  const [user, setUser] = useState({
-    name: "Alex Mercer",
-    email: "alex.mercer@luxemart.com",
-    phone: "+91 98765 43210",
-    address: "123 Premium Lane, Mumbai, Maharashtra, 400001"
-  });
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [user, setUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [registeredUsers, setRegisteredUsers] = useState([]);
 
   // Load products, cart, orders, and user on mount
   const fetchCatalog = () => {
@@ -149,6 +145,7 @@ export function AppProvider({ children }) {
   };
 
   // Load products, cart, orders, and user on mount
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     try {
       const localProducts = localStorage.getItem("e_commerce_products");
@@ -202,6 +199,28 @@ export function AppProvider({ children }) {
         safeSetItem("e_commerce_orders", JSON.stringify([defaultOrder]));
       }
 
+      const localRegisteredUsers = localStorage.getItem("e_commerce_registered_users");
+      let usersList = [];
+      if (localRegisteredUsers) {
+        try {
+          usersList = JSON.parse(localRegisteredUsers);
+          setRegisteredUsers(usersList);
+        } catch (e) {
+          console.error("Error parsing local registered users:", e);
+        }
+      } else {
+        const defaultUsers = [{
+          name: "Alex Mercer",
+          email: "alex.mercer@luxemart.com",
+          password: "password123",
+          phone: "+91 98765 43210",
+          address: "123 Premium Lane, Mumbai, Maharashtra, 400001"
+        }];
+        usersList = defaultUsers;
+        setRegisteredUsers(defaultUsers);
+        safeSetItem("e_commerce_registered_users", JSON.stringify(defaultUsers));
+      }
+
       if (localUser) {
         try {
           setUser(JSON.parse(localUser));
@@ -239,7 +258,9 @@ export function AppProvider({ children }) {
       setProducts(fallbackProducts);
       setLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Save Cart to local storage when changed
   useEffect(() => {
@@ -359,15 +380,53 @@ export function AppProvider({ children }) {
   };
 
   const updateUserProfile = (updatedFields) => {
-    setUser((prev) => ({ ...prev, ...updatedFields }));
+    setUser((prev) => (prev ? { ...prev, ...updatedFields } : updatedFields));
+    // Also update in registeredUsers list
+    setRegisteredUsers((prevUsers) => {
+      const updated = prevUsers.map((u) =>
+        u.email.toLowerCase() === user?.email?.toLowerCase() ? { ...u, ...updatedFields } : u
+      );
+      safeSetItem("e_commerce_registered_users", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const login = () => {
+    // Legacy support: log in default user if exists
+    const defaultUser = registeredUsers.find(u => u.email === "alex.mercer@luxemart.com") || {
+      name: "Alex Mercer",
+      email: "alex.mercer@luxemart.com",
+      phone: "+91 98765 43210",
+      address: "123 Premium Lane, Mumbai, Maharashtra, 400001"
+    };
+    setUser(defaultUser);
     setIsLoggedIn(true);
+  };
+
+  const loginWithEmail = (email, password) => {
+    const foundUser = registeredUsers.find(
+      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+    );
+    if (!foundUser) {
+      throw new Error("Invalid email or password.");
+    }
+    setUser(foundUser);
+    setIsLoggedIn(true);
+    return foundUser;
+  };
+
+  const signup = (userData) => {
+    if (registeredUsers.some((u) => u.email.toLowerCase() === userData.email.toLowerCase())) {
+      throw new Error("Email is already registered.");
+    }
+    const updatedUsers = [...registeredUsers, userData];
+    setRegisteredUsers(updatedUsers);
+    safeSetItem("e_commerce_registered_users", JSON.stringify(updatedUsers));
   };
 
   const logout = () => {
     setIsLoggedIn(false);
+    setUser(null);
   };
 
   return (
@@ -380,6 +439,7 @@ export function AppProvider({ children }) {
         error,
         user,
         isLoggedIn,
+        registeredUsers,
         addProduct,
         editProduct,
         deleteProduct,
@@ -390,6 +450,8 @@ export function AppProvider({ children }) {
         placeOrder,
         updateUserProfile,
         login,
+        loginWithEmail,
+        signup,
         logout,
         cartDrawerOpen,
         setCartDrawerOpen
