@@ -279,7 +279,7 @@ export default function Cart() {
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               {cart.map((item) => (
                 <Paper 
-                  key={item.id} 
+                  key={item.cartId || item.id} 
                   elevation={0}
                   sx={{ 
                     p: 2.5, 
@@ -287,41 +287,56 @@ export default function Cart() {
                     borderColor: "divider", 
                     borderRadius: 4,
                     display: "flex",
-                    gap: 3,
-                    alignItems: "center"
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 2, sm: 3 },
+                    alignItems: { xs: "flex-start", sm: "center" }
                   }}
                 >
-                  {/* Product thumbnail */}
-                  <Avatar 
-                    variant="rounded" 
-                    src={item.image} 
-                    sx={{ width: 80, height: 80, bgcolor: "white", p: 1, border: "1px solid", borderColor: "divider" }}
-                  />
+                  <Box sx={{ display: "flex", gap: 2.5, alignItems: "center", width: "100%" }}>
+                    {/* Product thumbnail */}
+                    <Avatar 
+                      variant="rounded" 
+                      src={item.image} 
+                      sx={{ width: 80, height: 80, bgcolor: "white", p: 1, border: "1px solid", borderColor: "divider" }}
+                    />
 
-                  {/* Details */}
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.4, mb: 0.5 }}>
-                      {item.title}
-                    </Typography>
-                    <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 1 }}>
-                      <Typography variant="caption" color="text.muted" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
-                        {item.category}
+                    {/* Details */}
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.4, mb: 0.5, fontSize: { xs: "0.95rem", sm: "1rem" } }}>
+                        {item.title}
                       </Typography>
-                      {item.selectedSize && (
-                        <Chip 
-                          label={`Size: ${item.selectedSize}`} 
-                          size="small" 
-                          sx={{ height: 18, fontSize: "0.7rem", fontWeight: 700, bgcolor: "rgba(99, 102, 241, 0.08)", color: "primary.main" }} 
-                        />
-                      )}
+                      <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 1, flexWrap: "wrap" }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
+                          {item.category}
+                        </Typography>
+                        {item.selectedSize && (
+                          <Chip 
+                            label={`Size: ${item.selectedSize}`} 
+                            size="small" 
+                            sx={{ height: 18, fontSize: "0.7rem", fontWeight: 700, bgcolor: "rgba(99, 102, 241, 0.08)", color: "primary.main" }} 
+                          />
+                        )}
+                      </Box>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "primary.main" }}>
+                        ₹{(item.price * 85).toFixed(2)}
+                      </Typography>
                     </Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "primary.main" }}>
-                      ₹{(item.price * 85).toFixed(2)}
-                    </Typography>
                   </Box>
 
                   {/* Item Counter and remove btn */}
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1.5 }}>
+                  <Box 
+                    sx={{ 
+                      display: "flex", 
+                      flexDirection: { xs: "row", sm: "column" }, 
+                      alignItems: { xs: "center", sm: "flex-end" }, 
+                      justifyContent: "space-between", 
+                      width: { xs: "100%", sm: "auto" },
+                      borderTop: { xs: "1px solid", sm: "none" },
+                      borderColor: "divider",
+                      pt: { xs: 2, sm: 0 },
+                      gap: 1.5
+                    }}
+                  >
                     <Box 
                       sx={{ 
                         display: "flex", 

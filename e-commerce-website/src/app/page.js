@@ -390,7 +390,16 @@ export default function Home() {
         {selectedProduct && (
           <Grid container sx={{ minHeight: 400 }}>
             {/* Left Column: Image wrapper */}
-            <Grid item xs={12} md={5.5} sx={{ bgcolor: "#ffffff", display: "flex", justifyContent: "center", alignItems: "center", p: 4, borderRight: "1px solid", borderColor: "rgba(0, 0, 0, 0.06)" }}>
+            <Grid item xs={12} md={5.5} sx={{ 
+              bgcolor: "#ffffff", 
+              display: "flex", 
+              justifyContent: "center", 
+              alignItems: "center", 
+              p: 4, 
+              borderRight: { xs: "none", md: "1px solid" }, 
+              borderBottom: { xs: "1px solid", md: "none" },
+              borderColor: "rgba(0, 0, 0, 0.06)" 
+            }}>
               <Box component="img" src={selectedProduct.image} alt={selectedProduct.title} sx={{ maxHeight: 350, maxWidth: "100%", objectFit: "contain" }} />
             </Grid>
             {/* Right Column: Content */}

@@ -27,11 +27,14 @@ import {
   Zoom,
   Drawer,
   Chip,
-  Avatar
+  Avatar,
+  List,
+  ListItem
 } from "@mui/material";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import SearchIcon from "@mui/icons-material/Search";
+import MenuIcon from "@mui/icons-material/Menu";
 import LogoutIcon from "@mui/icons-material/Logout";
 import HistoryIcon from "@mui/icons-material/History";
 import QrCodeIcon from "@mui/icons-material/QrCode";
@@ -49,6 +52,9 @@ export default function Navbar() {
   // Profile menu state
   const [anchorEl, setAnchorEl] = React.useState(null);
   const isMenuOpen = Boolean(anchorEl);
+
+  // Mobile drawer navigation state
+  const [mobileDrawerOpen, setMobileDrawerOpen] = React.useState(false);
 
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -119,48 +125,60 @@ export default function Navbar() {
     >
       <Container maxWidth="lg">
         <Toolbar sx={{ justifyContent: "space-between", px: { xs: 0 } }}>
-          {/* Logo */}
-          <Typography 
-            component={Link} 
-            href="/" 
-            sx={{ 
-              fontFamily: "var(--font-outfit), sans-serif",
-              fontSize: { xs: "1.55rem", md: "2.1rem" },
-              fontWeight: 900, 
-              textDecoration: "none", 
-              color: "text.primary",
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              letterSpacing: "-0.75px"
-            }}
-          >
-            {/* Minimalist Glowing Dot Brand Seal */}
-            <Box 
-              sx={{ 
-                width: 11, 
-                height: 11, 
-                borderRadius: "50%", 
-                background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
-                display: "inline-block",
-                boxShadow: "0 0 10px rgba(99, 102, 241, 0.65)"
-              }}
-            />
-            <Box component="span" sx={{ 
-              background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              fontWeight: 900
-            }}>
-              Luxe
-            </Box>
-            <Box component="span" sx={{ fontWeight: 800, color: "#0f172a" }}>
-              Mart
-            </Box>
-          </Typography>
+          {/* Left Area: Logo & Mobile Hamburger */}
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            {/* Hamburger Menu Icon (Mobile Only) */}
+            <IconButton
+              color="primary"
+              onClick={() => setMobileDrawerOpen(true)}
+              sx={{ display: { md: "none" }, mr: 1, p: 0.8 }}
+            >
+              <MenuIcon />
+            </IconButton>
 
-          {/* Links */}
-          <Box sx={{ display: "flex", gap: 3, alignItems: "center" }}>
+            {/* Logo */}
+            <Typography 
+              component={Link} 
+              href="/" 
+              sx={{ 
+                fontFamily: "var(--font-outfit), sans-serif",
+                fontSize: { xs: "1.35rem", md: "2.1rem" },
+                fontWeight: 900, 
+                textDecoration: "none", 
+                color: "text.primary",
+                display: "flex",
+                alignItems: "center",
+                gap: 0.8,
+                letterSpacing: "-0.75px"
+              }}
+            >
+              {/* Minimalist Glowing Dot Brand Seal */}
+              <Box 
+                sx={{ 
+                  width: { xs: 8, md: 11 }, 
+                  height: { xs: 8, md: 11 }, 
+                  borderRadius: "50%", 
+                  background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+                  display: "inline-block",
+                  boxShadow: "0 0 10px rgba(99, 102, 241, 0.65)"
+                }}
+              />
+              <Box component="span" sx={{ 
+                background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                fontWeight: 900
+              }}>
+                Luxe
+              </Box>
+              <Box component="span" sx={{ fontWeight: 800, color: "#0f172a" }}>
+                Mart
+              </Box>
+            </Typography>
+          </Box>
+
+          {/* Links (Desktop Only) */}
+          <Box sx={{ display: { xs: "none", md: "flex" }, gap: 3, alignItems: "center" }}>
             <Button 
               component={Link} 
               href="/" 
@@ -559,6 +577,39 @@ export default function Navbar() {
             </Box>
           </Box>
         )}
+      </Drawer>
+
+      {/* Mobile Drawer (Left Slide-in) */}
+      <Drawer
+        anchor="left"
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        PaperProps={{
+          sx: { width: 250 }
+        }}
+      >
+        <Box sx={{ p: 2.5, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid", borderColor: "divider" }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "primary.main" }}>
+            Menu
+          </Typography>
+          <IconButton onClick={() => setMobileDrawerOpen(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <List>
+          <ListItem button component={Link} href="/" onClick={() => setMobileDrawerOpen(false)}>
+            <ListItemText primary="Home" primaryTypographyProps={{ fontWeight: 600 }} />
+          </ListItem>
+          <ListItem button component={Link} href="/about" onClick={() => setMobileDrawerOpen(false)}>
+            <ListItemText primary="About Us" primaryTypographyProps={{ fontWeight: 600 }} />
+          </ListItem>
+          <ListItem button component={Link} href="/contact" onClick={() => setMobileDrawerOpen(false)}>
+            <ListItemText primary="Contact Us" primaryTypographyProps={{ fontWeight: 600 }} />
+          </ListItem>
+          <ListItem button component={Link} href="/track" onClick={() => setMobileDrawerOpen(false)}>
+            <ListItemText primary="Track Order" primaryTypographyProps={{ fontWeight: 600 }} />
+          </ListItem>
+        </List>
       </Drawer>
     </AppBar>
   );

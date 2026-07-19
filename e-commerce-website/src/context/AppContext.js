@@ -4,6 +4,81 @@ import React, { createContext, useState, useEffect, useContext } from "react";
 
 const AppContext = createContext(null);
 
+const fallbackProducts = [
+  {
+    id: 1,
+    title: "Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops",
+    price: 109.95,
+    description: "Your perfect pack for everyday use and walks in the forest. Stash your laptop (up to 15 inches) in the padded sleeve, your everyday.",
+    category: "men's clothing",
+    image: "https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg",
+    rating: { rate: 3.9, count: 120 }
+  },
+  {
+    id: 2,
+    title: "Mens Casual Premium Slim Fit T-Shirts",
+    price: 22.3,
+    description: "Slim-fitting style, contrast raglan long sleeve, three-button henley placket, light weight & soft fabric for breathable and comfortable wearing.",
+    category: "men's clothing",
+    image: "https://fakestoreapi.com/img/71-3HjGNDUL._AC_SY879._SX._UX._SY._UY_.jpg",
+    rating: { rate: 4.1, count: 259 }
+  },
+  {
+    id: 3,
+    title: "Mens Cotton Jacket",
+    price: 55.99,
+    description: "great outerwear jackets for Spring/Autumn/Winter, suitable for many occasions, such as working, hiking, camping, mountain/rock climbing, cycling, traveling or other outdoors.",
+    category: "men's clothing",
+    image: "https://fakestoreapi.com/img/71li-yxa1lL._AC_UX679_.jpg",
+    rating: { rate: 4.7, count: 500 }
+  },
+  {
+    id: 4,
+    title: "Mens Casual Slim Fit",
+    price: 15.99,
+    description: "The color could be slightly different between on the screen and in practice. / Please note that body builds vary by person, therefore, detailed size information should be reviewed.",
+    category: "men's clothing",
+    image: "https://fakestoreapi.com/img/71YXzeOuslL._AC_UY879_.jpg",
+    rating: { rate: 2.1, count: 430 }
+  },
+  {
+    id: 5,
+    title: "John Hardy Women's Legends Naga Gold & Silver Dragon Bracelet",
+    price: 695.0,
+    description: "From our Legends Collection, the Naga was inspired by the mythical water dragon that protects the ocean's pearl. Wear facing inward to be bestowed with love and abundance.",
+    category: "jewelery",
+    image: "https://fakestoreapi.com/img/71pWzhdJNwL._AC_UL640_.jpg",
+    rating: { rate: 4.6, count: 400 }
+  },
+  {
+    id: 6,
+    title: "Solid Gold Petite Micropave",
+    price: 168.0,
+    description: "Satisfaction Guaranteed. Return or exchange any order within 30 days. Designed and manufactured in New York, USA.",
+    category: "jewelery",
+    image: "https://fakestoreapi.com/img/61sbMiUnoGL._AC_UL640_.jpg",
+    rating: { rate: 3.9, count: 70 }
+  },
+  {
+    id: 7,
+    title: "White Gold Plated Princess",
+    price: 9.99,
+    description: "Classic Created Wedding Engagement Ring. Gift to someone you love.",
+    category: "jewelery",
+    image: "https://fakestoreapi.com/img/71YAIFU48IL._AC_UL640_.jpg",
+    rating: { rate: 3.0, count: 400 }
+  },
+  {
+    id: 8,
+    title: "WD 2TB Elements Portable External Hard Drive - USB 3.0",
+    price: 64.0,
+    description: "USB 3.0 and USB 2.0 Compatibility Fast data transfers Improve PC Performance High Capacity; Compatibility Formatted NTFS for Windows 10, Windows 8.1, Windows 7.",
+    category: "electronics",
+    image: "https://fakestoreapi.com/img/61IBJVJIGmL._AC_SL1500_.jpg",
+    rating: { rate: 3.3, count: 203 }
+  }
+];
+
 export function AppProvider({ children }) {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
@@ -11,6 +86,22 @@ export function AppProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+
+  const safeSetItem = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn(`localStorage.setItem failed for key "${key}":`, e);
+    }
+  };
+
+  const safeRemoveItem = (key) => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn(`localStorage.removeItem failed for key "${key}":`, e);
+    }
+  };
 
   // User auth and profile state
   const [user, setUser] = useState({
@@ -22,110 +113,156 @@ export function AppProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
 
   // Load products, cart, orders, and user on mount
+  const fetchCatalog = () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    fetch("https://fakestoreapi.com/products", { signal: controller.signal })
+      .then((res) => {
+        clearTimeout(timeoutId);
+        if (!res.ok) {
+          throw new Error("Failed to fetch products from API");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        const formatted = data.map((item) => ({
+          id: item.id,
+          title: item.title,
+          price: Number(item.price),
+          description: item.description,
+          category: item.category,
+          image: item.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
+          rating: item.rating || { rate: 4.5, count: 120 }
+        }));
+        setProducts(formatted);
+        safeSetItem("e_commerce_products", JSON.stringify(formatted));
+        setLoading(false);
+      })
+      .catch((err) => {
+        clearTimeout(timeoutId);
+        console.warn("API Fetch failed or timed out. Falling back to local static catalog data.", err);
+        setProducts(fallbackProducts);
+        safeSetItem("e_commerce_products", JSON.stringify(fallbackProducts));
+        setLoading(false);
+      });
+  };
+
+  // Load products, cart, orders, and user on mount
   useEffect(() => {
-    const localProducts = localStorage.getItem("e_commerce_products");
-    const localCart = localStorage.getItem("e_commerce_cart");
-    const localOrders = localStorage.getItem("e_commerce_orders");
-    const localUser = localStorage.getItem("e_commerce_user");
-    const localIsLoggedIn = localStorage.getItem("e_commerce_logged_in");
+    try {
+      const localProducts = localStorage.getItem("e_commerce_products");
+      const localCart = localStorage.getItem("e_commerce_cart");
+      const localOrders = localStorage.getItem("e_commerce_orders");
+      const localUser = localStorage.getItem("e_commerce_user");
+      const localIsLoggedIn = localStorage.getItem("e_commerce_logged_in");
 
-    if (localCart) {
-      setCart(JSON.parse(localCart));
-    }
-    if (localOrders) {
-      setOrders(JSON.parse(localOrders));
-    } else {
-      const defaultOrder = {
-        id: "ORD-123456",
-        date: new Date().toLocaleDateString(),
-        status: "Processing",
-        total: 109.95,
-        shippingInfo: {
-          name: "Alex Mercer",
-          email: "alex.mercer@luxemart.com",
-          address: "123 Premium Lane",
-          city: "Mumbai",
-          zipCode: "400001",
-          paymentId: "pay_mock_default"
-        },
-        items: [
-          {
-            id: 1,
-            title: "Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops",
-            price: 109.95,
-            quantity: 1,
-            category: "men's clothing",
-            image: "https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg",
-            selectedSize: "M"
+      if (localCart) {
+        try {
+          setCart(JSON.parse(localCart) || []);
+        } catch (e) {
+          console.error("Error parsing local cart:", e);
+          setCart([]);
+        }
+      }
+
+      if (localOrders) {
+        try {
+          setOrders(JSON.parse(localOrders) || []);
+        } catch (e) {
+          console.error("Error parsing local orders:", e);
+        }
+      } else {
+        const defaultOrder = {
+          id: "ORD-123456",
+          date: new Date().toLocaleDateString(),
+          status: "Processing",
+          total: 109.95,
+          shippingInfo: {
+            name: "Alex Mercer",
+            email: "alex.mercer@luxemart.com",
+            address: "123 Premium Lane",
+            city: "Mumbai",
+            zipCode: "400001",
+            paymentId: "pay_mock_default"
+          },
+          items: [
+            {
+              id: 1,
+              title: "Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops",
+              price: 109.95,
+              quantity: 1,
+              category: "men's clothing",
+              image: "https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg",
+              selectedSize: "M"
+            }
+          ]
+        };
+        setOrders([defaultOrder]);
+        safeSetItem("e_commerce_orders", JSON.stringify([defaultOrder]));
+      }
+
+      if (localUser) {
+        try {
+          setUser(JSON.parse(localUser));
+        } catch (e) {
+          console.error("Error parsing local user:", e);
+        }
+      }
+
+      if (localIsLoggedIn !== null) {
+        try {
+          setIsLoggedIn(JSON.parse(localIsLoggedIn));
+        } catch (e) {
+          console.error("Error parsing login state:", e);
+        }
+      }
+
+      if (localProducts) {
+        try {
+          const parsed = JSON.parse(localProducts);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setProducts(parsed);
+            setLoading(false);
+          } else {
+            throw new Error("Local products list empty");
           }
-        ]
-      };
-      setOrders([defaultOrder]);
-      localStorage.setItem("e_commerce_orders", JSON.stringify([defaultOrder]));
-    }
-    if (localUser) {
-      setUser(JSON.parse(localUser));
-    }
-    if (localIsLoggedIn !== null) {
-      setIsLoggedIn(JSON.parse(localIsLoggedIn));
-    }
-
-    if (localProducts) {
-      setProducts(JSON.parse(localProducts));
+        } catch (e) {
+          console.error("Error parsing local products:", e);
+          fetchCatalog();
+        }
+      } else {
+        fetchCatalog();
+      }
+    } catch (err) {
+      console.error("Initialization error in AppContext hook:", err);
+      setProducts(fallbackProducts);
       setLoading(false);
-    } else {
-      // Fetch from API
-      fetch("https://fakestoreapi.com/products")
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error("Failed to fetch products from API");
-          }
-          return res.json();
-        })
-        .then((data) => {
-          // Add a default category field if not present, normalize structure
-          const formatted = data.map((item) => ({
-            id: item.id,
-            title: item.title,
-            price: Number(item.price),
-            description: item.description,
-            category: item.category,
-            image: item.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
-            rating: item.rating || { rate: 4.5, count: 120 }
-          }));
-          setProducts(formatted);
-          localStorage.setItem("e_commerce_products", JSON.stringify(formatted));
-          setLoading(false);
-        })
-        .catch((err) => {
-          setError(err.message);
-          setLoading(false);
-        });
     }
   }, []);
 
   // Save Cart to local storage when changed
   useEffect(() => {
     if (cart.length > 0 || localStorage.getItem("e_commerce_cart")) {
-      localStorage.setItem("e_commerce_cart", JSON.stringify(cart));
+      safeSetItem("e_commerce_cart", JSON.stringify(cart));
     }
   }, [cart]);
 
   // Save Orders to local storage when changed
   useEffect(() => {
     if (orders.length > 0 || localStorage.getItem("e_commerce_orders")) {
-      localStorage.setItem("e_commerce_orders", JSON.stringify(orders));
+      safeSetItem("e_commerce_orders", JSON.stringify(orders));
     }
   }, [orders]);
 
   // Save user profile to local storage when changed
   useEffect(() => {
-    localStorage.setItem("e_commerce_user", JSON.stringify(user));
+    safeSetItem("e_commerce_user", JSON.stringify(user));
   }, [user]);
 
   // Save isLoggedIn to local storage when changed
   useEffect(() => {
-    localStorage.setItem("e_commerce_logged_in", JSON.stringify(isLoggedIn));
+    safeSetItem("e_commerce_logged_in", JSON.stringify(isLoggedIn));
   }, [isLoggedIn]);
 
   // Add Product (Admin mock feature requested by user: "product should be additable")
@@ -137,7 +274,7 @@ export function AppProvider({ children }) {
     };
     const updatedProducts = [productWithId, ...products];
     setProducts(updatedProducts);
-    localStorage.setItem("e_commerce_products", JSON.stringify(updatedProducts));
+    safeSetItem("e_commerce_products", JSON.stringify(updatedProducts));
   };
 
   // Edit Product
@@ -146,7 +283,7 @@ export function AppProvider({ children }) {
       prod.id === Number(id) ? { ...prod, ...updatedFields } : prod
     );
     setProducts(updatedProducts);
-    localStorage.setItem("e_commerce_products", JSON.stringify(updatedProducts));
+    safeSetItem("e_commerce_products", JSON.stringify(updatedProducts));
 
     // Update in Cart if present
     setCart((prevCart) =>
@@ -162,7 +299,7 @@ export function AppProvider({ children }) {
   const deleteProduct = (id) => {
     const updatedProducts = products.filter((prod) => prod.id !== Number(id));
     setProducts(updatedProducts);
-    localStorage.setItem("e_commerce_products", JSON.stringify(updatedProducts));
+    safeSetItem("e_commerce_products", JSON.stringify(updatedProducts));
 
     // Remove from Cart as well
     setCart((prevCart) => prevCart.filter((item) => item.id !== Number(id)));
@@ -202,7 +339,7 @@ export function AppProvider({ children }) {
   // Clear Cart
   const clearCart = () => {
     setCart([]);
-    localStorage.removeItem("e_commerce_cart");
+    safeRemoveItem("e_commerce_cart");
   };
 
   // Place Order
